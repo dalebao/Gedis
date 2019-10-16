@@ -10,7 +10,7 @@ type Cmd struct {
 
 
 //cmd 操作
-type CmdInterface interface {
+type CI interface {
 	Keys(key string) interface{}
 }
 
