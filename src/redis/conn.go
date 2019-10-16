@@ -6,17 +6,19 @@ import (
 	"time"
 )
 
-var (
-	redisPool *redis.Pool
-	client    redis.Conn
-)
-
 type RedisConfig struct {
 	Host     string
 	Port     string
 	Password string
 	Db       int
 }
+
+type R struct {
+	redisPool *redis.Pool
+	client    redis.Conn
+}
+
+var r = new(R)
 
 func (redisConfig *RedisConfig) Dial() error {
 	address := fmt.Sprintf("%v:%v", redisConfig.Host, redisConfig.Port)
@@ -27,7 +29,7 @@ func (redisConfig *RedisConfig) Dial() error {
 	writeTimeout := redis.DialWriteTimeout(time.Second * 60)
 	conTimeout := redis.DialConnectTimeout(time.Second * 60)
 
-	redisPool = &redis.Pool{
+	r.redisPool = &redis.Pool{
 		MaxIdle:   500,
 		MaxActive: 500,
 		// **重要** 如果空闲列表中没有可用的连接
@@ -51,16 +53,33 @@ func (redisConfig *RedisConfig) Dial() error {
 			return err
 		},
 	}
-	client = redisPool.Get()
+	r.client = r.redisPool.Get()
 
-	err := redisPool.TestOnBorrow(client, time.Now())
+	err := r.redisPool.TestOnBorrow(r.client, time.Now())
 
 	return err
 }
 
+func Dal(name string) *R {
+	var redisConfig *RedisConfig
+	if name == "" {
+		redisConfig = SetConf()
+	}
+	err := redisConfig.Dial()
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return r
+}
+
+func SetConf() *RedisConfig {
+	return &RedisConfig{"127.0.0.1", "6379", "", 0}
+}
+
 //close redis pool
 func Close() {
-	err := redisPool.Close()
+	err := r.redisPool.Close()
 	if err != nil {
 		fmt.Println("Close redis error", err)
 	}

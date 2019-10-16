@@ -5,7 +5,7 @@ import (
 )
 
 //redis get 操作
-func Get(key string) (res string, err error) {
-	res, err = redis.String(client.Do("get", key))
+func (r *R) Get(key string) (res string, err error) {
+	res, err = redis.String(r.client.Do("get", key))
 	return
 }
